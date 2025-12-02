@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CYBER WOLF — Simple E‑commerce</title>
+  <style>
+    :root{
+      --bg:#0f141a; --panel:#141a21; --card:#18202a; --accent:#4f8cff; --accent-2:#00c389;
+      --text:#e6edf3; --muted:#a1a8b0; --danger:#ff5c5c; --warn:#ffb020;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Noto Sans',sans-serif;
+      color:var(--text); background:linear-gradient(180deg,#0b1016, var(--bg));
+    }
+    a{color:var(--text); text-decoration:none}
+    header{
+      position:sticky; top:0; z-index:10;
+      background:rgba(20,26,33,.8); backdrop-filter:saturate(1.2) blur(8px);
+      border-bottom:1px solid #202733;
+    }
+    .nav{
+      max-width:1080px; margin:0 auto; display:flex; align-items:center; gap:12px;
+      padding:10px 16px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px;
+    }
+    .brand .logo{
+      width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      display:grid; place-items:center; color:white; font-weight:800; font-size:14px;
+      box-shadow:0 6px 24px rgba(79,140,255,.35);
+    }
+    .nav-actions{margin-left:auto; display:flex; gap:10px; align-items:center}
+    .btn{
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px;
+      border:1px solid #243040; background:#11171f; color:var(--text); cursor:pointer;
+      transition:.2s ease; font-size:14px;
+    }
+    .btn:hover{background:#15202b}
+    .btn.accent{border-color:transparent; background:linear-gradient(135deg,var(--accent),var(--accent-2)); color:#0b1016; font-weight:700}
+    .btn.badge{position:relative}
+    .badge-count{
+      position:absolute; top:-6px; right:-6px; background:var(--warn); color:#11171f;
+      font-weight:800; font-size:12px; border-radius:12px; padding:2px 6px; border:2px solid #1a2029;
+    }
+    .container{max-width:1080px; margin:16px auto; padding:0 16px}
+    .filters{
+      display:grid; grid-template-columns:1.5fr 1fr 1fr .7fr; gap:10px; margin:10px 0 16px;
+    }
+    .field{
+      display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid #243040; border-radius:12px; padding:8px 12px;
+    }
+    .field input, .field select{
+      width:100%; background:transparent; border:none; outline:none; color:var(--text); font-size:14px;
+    }
+    .grid{
+      display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+    }
+    @media (max-width:1024px){ .grid{grid-template-columns:repeat(3,1fr)} .filters{grid-template-columns:1.3fr 1fr 1fr 1fr} }
+    @media (max-width:720px){ .grid{grid-template-columns:repeat(2,1fr)} .nav{flex-wrap:wrap} .filters{grid-template-columns:1fr 1fr} }
+    @media (max-width:480px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background:var(--card); border:1px solid #233042; border-radius:14px; overflow:hidden;
+      display:flex; flex-direction:column; transition:.2s ease;
+    }
+    .card:hover{transform:translateY(-2px); box-shadow:0 8px 32px rgba(0,0,0,.25)}
+    .thumb{
+      aspect-ratio:4/3; background:#0d131a; display:grid; place-items:center; color:#6fa3ff; font-weight:800;
+      background-image:radial-gradient(120px 60px at 50% 0%,rgba(79,140,255,.2),transparent),
+                       radial-gradient(120px 60px at 0% 100%,rgba(0,195,137,.15),transparent);
+    }
+    .thumb img{width:100%; height:100%; object-fit:cover}
+    .info{padding:12px}
+    .title{font-weight:700; margin:2px 0 6px}
+    .muted{color:var(--muted); font-size:13px}
+    .price{margin-top:8px; font-weight:800; letter-spacing:.3px}
+    .actions{display:flex; gap:8px; margin-top:10px}
+    .pill{
+      border:1px solid #2a3749; background:#121922; color:var(--text); padding:6px 10px; border-radius:999px; font-size:12px;
+    }
+    .add-btn{flex:1}
+    .qty{display:flex; align-items:center; gap:6px}
+    .qty button{width:28px; height:28px; border-radius:8px}
+
+    /* Cart drawer */
+    .drawer{
+      position:fixed; right:-420px; top:0; width:420px; max-width:90vw; height:100vh; background:var(--panel);
+      border-left:1px solid #243040; box-shadow:-12px 0 40px rgba(0,0,0,.35); transition:.25s ease; z-index:20;
+      display:flex; flex-direction:column;
+    }
+    .drawer.open{right:0}
+    .drawer header{position:sticky; top:0}
+    .drawer-body{padding:14px; overflow:auto; flex:1}
+    .cart-item{
+      display:grid; grid-template-columns:56px 1fr auto; gap:10px; align-items:center; padding:10px; border:1px solid #233042; border-radius:12px; margin-bottom:10px; background:#151b24;
+    }
+    .cart-thumb{width:56px; height:56px; border-radius:10px; background:#0d131a; display:grid; place-items:center; color:#6fa3ff; font-weight:800}
+    .cart-line{display:flex; align-items:center; gap:8px}
+    .cart-footer{border-top:1px solid #243040; padding:12px 14px; background:#121820}
+    .total{font-weight:800}
+    .empty{color:var(--muted); text-align:center; padding:24px}
+    .danger{background:var(--danger); color:#11171f; border-color:transparent; font-weight:800}
+    .safe{background:var(--accent-2); color:#0b1016; border-color:transparent; font-weight:800}
+    .accent-outline{border-color:var(--accent); color:var(--accent)}
+    .footer{
+      text-align:center; color:var(--muted); font-size:12px; padding:24px 12px; border-top:1px solid #202733;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="nav">
+      <div class="brand">
+        <div ><img src="c:\Users\balan\Downloads\88073abaea4849418f664da36b1b47d9-free.png" alt="" srcset=""></div>
+        <div>CYBER WOLF tech</div>
+      </div>
+
+      <div class="field" style="flex:1; max-width:420px">
+        <span>🔎</span>
+        <input id="search" type="search" placeholder="Search products..." />
+      </div>
+
+      <div class="nav-actions">
+        <button id="langToggle" class="btn" aria-label="Toggle language">🌐 EN</button>
+        <button id="openCart" class="btn badge" aria-label="Open cart">🛒 Cart
+          <span id="cartCount" class="badge-count">0</span>
+        </button>
+        <button class="btn accent">Sign in</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="filters">
+      <div class="field">
+        <strong style="font-size:12px">Category</strong>
+        <select id="category">
+          <option value="all">All</option>
+          <option value="electronics">Electronics</option>
+          <option value="fashion">JAMMER</option>
+          <option value="books">KEYS</option>
+          <option value="groceries">CYBER GAGETS</option>
+        </select>
+      </div>
+      <div class="field">
+        <strong style="font-size:12px">Sort</strong>
+        <select id="sort">
+          <option value="featured">Featured</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating-desc">Rating: High to Low</option>
+        </select>
+      </div>
+      <div class="field">
+        <strong style="font-size:12px">Price</strong>
+        <select id="priceRange">
+          <option value="all">All</option>
+          <option value="0-999">Under ₹500</option>
+          <option value="1000-4999">₹500–₹499</option>
+          <option value="5000-9999">₹1,000–₹5,000</option>
+          <option value="10000-999999">₹10,000+</option>
+        </select>
+      </div>
+      <div class="field">
+        <button id="clearFilters" class="btn accent-outline" style="width:100%">Clear</button>
+      </div>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </div>
+
+  <!-- Cart drawer -->
+  <aside id="cartDrawer" class="drawer" aria-label="Shopping cart" aria-hidden="true">
+    <header>
+      <div class="nav">
+        <div class="brand">
+          <div class="logo">🛒</div>
+          <div id="cartTitle">Your cart</div>
+        </div>
+        <div class="nav-actions">
+          <button id="closeCart" class="btn">✖ Close</button>
+        </div>
+      </div>
+    </header>
+    <div id="cartBody" class="drawer-body"></div>
+    <div class="cart-footer">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+        <div id="cartTotal" class="total">Total: ₹0</div>
+        <div style="display:flex; gap:8px">
+          <button id="clearCart" class="btn danger">Clear</button>
+          <button id="checkout" class="btn safe">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <footer class="footer">
+    © 2025 CYBER WOLF Made for India.
+  </footer>
+
+  <script>
+    // ---- i18n (English/Tamil) ----
+    const i18n = {
+      en: {
+        searchPh: "Search products...",
+        cart: "Cart",
+        yourCart: "Your cart",
+        close: "Close",
+        total: "Total",
+        clear: "Clear",
+        checkout: "Checkout",
+        empty: "Your cart is empty. Add items to continue.",
+        addToCart: "Add to cart",
+        qty: "Qty"
+      },
+      ta: {
+        searchPh: "பொருட்களை தேடுங்கள்...",
+        cart: "கூடை",
+        yourCart: "உங்கள் கூடை",
+        close: "மூடு",
+        total: "மொத்தம்",
+        clear: "அழி",
+        checkout: "காசோலை",
+        empty: "உங்கள் கூடை காலியாக உள்ளது. பொருட்களைச் சேர்க்கவும்.",
+        addToCart: "கூடைக்கு சேர்",
+        qty: "எண்ணிக்கை"
+      }
+    };
+    let lang = localStorage.getItem("lang") || "en";
+
+    // ---- Sample product data ----
+    const products = [
+      {id:"P1001", title:"Wireless Earbuds Pro", category:"electronics", price:0, rating:4.4, stock:12, img:"", desc:"ANC, Bluetooth 5.3, 24h battery"},
+      {id:"P1002", title:"Smartwatch Neo", category:"electronics", price:0, rating:4.1, stock:8, img:"", desc:"Heart rate, SpO2, GPS, 1.4\" AMOLED"},
+      {id:"P2001", title:"USB", category:"hack", price:0, rating:4.3, stock:20, img:"", desc:"100% cotton, breathable, unisex fit"},
+      {id:"P2002", title:"bluethooth jammer", category:"jammer", price:0, rating:4.2, stock:16, img:"", desc:"Cushioned sole, lightweight, durable"},
+      {id:"P3001", title:"SEURITY KEY", category:"keys", price:277, rating:4.8, stock:30, img:"", desc:"Brain teasers and riddles, 220 pages"},
+      {id:"P3002", title:"password steeler", category:"hack", price:0, rating:4.6, stock:14, img:"", desc:"Curated Tamil literature collection"},
+      {id:"P4001", title:"mini pc", category:"hack", price:0, rating:4.7, stock:25, img:"", desc:"Freshly ground, rich aroma"},
+      {id:"P4002", title:"wifi jammer", category:"jammer", price:0, rating:4.5, stock:18, img:"", desc:"Multi‑millet blend, high fiber"}
+    ];
+
+    // ---- State ----
+    const state = {
+      query: "",
+      category: "all",
+      sort: "featured",
+      price: "all",
+      cart: JSON.parse(localStorage.getItem("cart") || "[]")
+    };
+
+    // ---- Elements ----
+    const el = {
+      search: document.getElementById("search"),
+      grid: document.getElementById("grid"),
+      category: document.getElementById("category"),
+      sort: document.getElementById("sort"),
+      price: document.getElementById("priceRange"),
+      clearFilters: document.getElementById("clearFilters"),
+      cartCount: document.getElementById("cartCount"),
+      drawer: document.getElementById("cartDrawer"),
+      openCart: document.getElementById("openCart"),
+      closeCart: document.getElementById("closeCart"),
+      cartBody: document.getElementById("cartBody"),
+      cartTotal: document.getElementById("cartTotal"),
+      clearCart: document.getElementById("clearCart"),
+      checkout: document.getElementById("checkout"),
+      langToggle: document.getElementById("langToggle"),
+      cartTitle: document.getElementById("cartTitle")
+    };
+
+    // ---- Helpers ----
+    const formatINR = (n) => "₹" + n.toLocaleString("en-IN");
+    const saveCart = () => localStorage.setItem("cart", JSON.stringify(state.cart));
+    const updateCount = () => el.cartCount.textContent = state.cart.reduce((a,c)=>a+c.qty,0);
+
+    function setLanguage(newLang){
+      lang = newLang; localStorage.setItem("lang", lang);
+      el.search.placeholder = i18n[lang].searchPh;
+      el.openCart.firstChild.textContent = "🛒 " + i18n[lang].cart + " ";
+      el.langToggle.textContent = (lang === "en" ? "🌐 EN" : "🌐 TA");
+      el.cartTitle.textContent = i18n[lang].yourCart;
+      el.closeCart.textContent = "✖ " + i18n[lang].close;
+      el.clearCart.textContent = i18n[lang].clear;
+      el.checkout.textContent = i18n[lang].checkout;
+      renderGrid(); renderCart();
+    }
+
+    function filterAndSort(list){
+      let res = [...list];
+      // search
+      if(state.query){
+        const q = state.query.toLowerCase();
+        res = res.filter(p=> (p.title+p.desc).toLowerCase().includes(q));
+      }
+      // category
+      if(state.category !== "all"){
+        res = res.filter(p=>p.category===state.category);
+      }
+      // price range
+      if(state.price !== "all"){
+        const [min,max] = state.price.split("-").map(Number);
+        res = res.filter(p=>p.price>=min && p.price<=max);
+      }
+      // sort
+      switch(state.sort){
+        case "price-asc": res.sort((a,b)=>a.price-b.price); break;
+        case "price-desc": res.sort((a,b)=>b.price-a.price); break;
+        case "rating-desc": res.sort((a,b)=>b.rating-a.rating); break;
+        default: res.sort((a,b)=>b.rating-a.rating); // featured by rating
+      }
+      return res;
+    }
+
+    function renderGrid(){
+      const list = filterAndSort(products);
+      el.grid.innerHTML = list.map(p=>`
+        <div class="card" data-id="${p.id}">
+          <div class="thumb">${p.img ? `<img src="${p.img}" alt="${p.title}">` : `${p.title.split(" ").map(w=>w[0]).join("").slice(0,3)}`}</div>
+          <div class="info">
+            <div class="title">${p.title}</div>
+            <div class="muted">${p.desc}</div>
+            <div class="pill" style="margin-top:6px">★ ${p.rating} • ${p.stock>0?"In stock":"Out of stock"}</div>
+            <div class="price">${formatINR(p.price)}</div>
+            <div class="actions">
+              <button class="btn add-btn" ${p.stock===0?"disabled":""} data-id="${p.id}">
+                ➕ ${i18n[lang].addToCart}
+              </button>
+              <div class="qty">
+                <button class="btn" data-qty="-1" data-id="${p.id}">−</button>
+                <button class="btn" data-qty="+1" data-id="${p.id}">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join("");
+
+      // Bind product actions
+      el.grid.querySelectorAll(".add-btn").forEach(btn=>{
+        btn.addEventListener("click",()=> addToCart(btn.dataset.id, 1));
+      });
+      el.grid.querySelectorAll(".qty .btn").forEach(btn=>{
+        btn.addEventListener("click",()=>{
+          const delta = btn.dataset.qty === "+1" ? 1 : -1;
+          nudgeCart(btn.dataset.id, delta);
+        });
+      });
+    }
+
+    function addToCart(id, qty=1){
+      const product = products.find(p=>p.id===id);
+      if(!product) return;
+      const line = state.cart.find(c=>c.id===id);
+      if(line){
+        line.qty = Math.max(1, line.qty + qty);
+      } else {
+        state.cart.push({id, qty: Math.max(1, qty)});
+      }
+      saveCart(); updateCount(); renderCart();
+    }
+
+    function nudgeCart(id, delta){
+      const line = state.cart.find(c=>c.id===id);
+      if(!line){ if(delta>0) addToCart(id,1); return; }
+      line.qty += delta;
+      if(line.qty <= 0){
+        state.cart = state.cart.filter(c=>c.id!==id);
+      }
+      saveCart(); updateCount(); renderCart();
+    }
+
+    function removeFromCart(id){
+      state.cart = state.cart.filter(c=>c.id!==id);
+      saveCart(); updateCount(); renderCart();
+    }
+
+    function renderCart(){
+      if(state.cart.length===0){
+        el.cartBody.innerHTML = `<div class="empty">${i18n[lang].empty}</div>`;
+        el.cartTotal.textContent = i18n[lang].total + ": ₹0";
+        return;
+      }
+      const lines = state.cart.map(line=>{
+        const p = products.find(x=>x.id===line.id);
+        const lineTotal = p.price * line.qty;
+        return `
+          <div class="cart-item">
+            <div class="cart-thumb">${p.title.split(" ").map(w=>w[0]).join("").slice(0,3)}</div>
+            <div>
+              <div class="title">${p.title}</div>
+              <div class="muted">${formatINR(p.price)} • ★ ${p.rating}</div>
+              <div class="cart-line">
+                <button class="btn" data-qty="-1" data-id="${p.id}">−</button>
+                <div class="pill">${i18n[lang].qty}: ${line.qty}</div>
+                <button class="btn" data-qty="+1" data-id="${p.id}">+</button>
+                <button class="btn danger" style="margin-left:auto" data-del="${p.id}">Remove</button>
+              </div>
+            </div>
+            <div class="price">${formatINR(lineTotal)}</div>
+          </div>
+        `;
+      }).join("");
+      el.cartBody.innerHTML = lines;
+
+      const total = state.cart.reduce((a,c)=>{
+        const p = products.find(x=>x.id===c.id);
+        return a + (p ? p.price*c.qty : 0);
+      },0);
+      el.cartTotal.textContent = i18n[lang].total + ": " + formatINR(total);
+
+      // Bind qty and remove
+      el.cartBody.querySelectorAll("[data-qty]").forEach(btn=>{
+        btn.addEventListener("click",()=>{
+          const delta = btn.dataset.qty === "+1" ? 1 : -1;
+          nudgeCart(btn.dataset.id, delta);
+        });
+      });
+      el.cartBody.querySelectorAll("[data-del]").forEach(btn=>{
+        btn.addEventListener("click",()=> removeFromCart(btn.dataset.del));
+      });
+    }
+
+    // ---- Events ----
+    el.search.addEventListener("input", e=>{ state.query = e.target.value.trim(); renderGrid(); });
+    el.category.addEventListener("change", e=>{ state.category = e.target.value; renderGrid(); });
+    el.sort.addEventListener("change", e=>{ state.sort = e.target.value; renderGrid(); });
+    el.price.addEventListener("change", e=>{ state.price = e.target.value; renderGrid(); });
+    el.clearFilters.addEventListener("click", ()=>{
+      state.query = ""; state.category = "all"; state.sort = "featured"; state.price = "all";
+      el.search.value = ""; el.category.value = "all"; el.sort.value = "featured"; el.price.value = "all";
+      renderGrid();
+    });
+
+    el.openCart.addEventListener("click", ()=>{
+      el.drawer.classList.add("open"); el.drawer.setAttribute("aria-hidden","false");
+    });
+    el.closeCart.addEventListener("click", ()=>{
+      el.drawer.classList.remove("open"); el.drawer.setAttribute("aria-hidden","true");
+    });
+
+    el.clearCart.addEventListener("click", ()=>{
+      state.cart = []; saveCart(); updateCount(); renderCart();
+    });
+
+    el.checkout.addEventListener("click", ()=>{
+      const total = state.cart.reduce((a,c)=>{
+        const p = products.find(x=>x.id===c.id);
+        return a + (p ? p.price*c.qty : 0);
+      },0);
+      alert(`Thank you! Order placed for ${formatINR(total)}.\n(Checkout demo — integrate a real gateway here.)`);
+      state.cart = []; saveCart(); updateCount(); renderCart(); el.drawer.classList.remove("open");
+    });
+
+    el.langToggle.addEventListener("click", ()=>{
+      setLanguage(lang === "en" ? "ta" : "en");
+    });
+
+    // ---- Init ----
+    setLanguage(lang);
+    renderGrid();
+    updateCount();
+    renderCart();
+
+    // Close drawer on outside click (optional)
+    document.addEventListener("click", (e)=>{
+      if(!el.drawer.classList.contains("open")) return;
+      const insideDrawer = e.target.closest(".drawer");
+      const openedByButton = e.target.closest("#openCart");
+      if(!insideDrawer && !openedByButton){
+        el.drawer.classList.remove("open"); el.drawer.setAttribute("aria-hidden","true");
+      }
+    });
+  </script>
+</body>
+</html>
+<footer></footer>
+  contact@
+
+  EMAIL:
+
+</footer>
